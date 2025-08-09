@@ -1,0 +1,33 @@
+{
+  "name": "code-editing-agent",
+  "version": "1.0.0",
+  "description": "A TypeScript implementation of a code-editing agent using Claude",
+  "type": "module",
+  "main": "src/agent.ts",
+  "scripts": {
+    "start": "bun agent.ts",
+    "dev": "bun --hot agent.ts",
+    "build": "bun build agent.ts --outdir dist --target node",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "claude",
+    "code-editing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.58.0",
+    "chalk": "^5.5.0",
+    "commander": "^12.0.0",
+    "fast-glob": "^3.3.2",
+    "readline": "^1.3.0",
+    "zod": "^4.0.15",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0"
+  }
+}
