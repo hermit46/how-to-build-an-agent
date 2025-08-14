@@ -1,6 +1,6 @@
-# Code Editing Agent
+# How to Build An Agent
 
-My TypeScript implementation of a code-editing AI agent powered by Claude, inspired by Thorsten Ball's [Amp blog post](https://ampcode.com/how-to-build-an-agent).
+My TypeScript implementation of an AI agent powered by Claude, inspired by Thorsten Ball's [Amp blog post](https://ampcode.com/how-to-build-an-agent).
 
 ## Features
 
