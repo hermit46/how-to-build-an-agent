@@ -68,60 +68,87 @@ const run = async () => {
     // Reset processUserInput
     processUserInput = true;
 
-    const completion = await client.messages.create({
+    const stream = client.messages.stream({
       model: "claude-sonnet-4-0",
       messages: conversations,
       max_tokens: 4096,
       tools: tools,
     });
 
-    for (const message of completion.content) {
-      switch (message.type) {
-        case "text": {
-          conversations.push({ role: "assistant", content: message.text });
-          console.log(chalk.blue(`Aura: ${message.text}`));
-          break;
+    let currentTextContent = "";
+    let isFirstText = true;
+
+    await new Promise<void>((resolve) => {
+      stream.on("text", (text) => {
+        if (isFirstText) {
+          process.stdout.write(chalk.blue("Aura: "));
+          isFirstText = false;
         }
-        case "tool_use": {
-          console.log(
-            chalk.yellow(
-              `tool : ${message.name}(${JSON.stringify(message.input)})`
-            )
-          );
+        process.stdout.write(chalk.blue(text));
+        currentTextContent += text;
+      });
+
+      stream.on("finalMessage", async (message) => {
+        if (currentTextContent) {
+          console.log(); // New line after streaming
           conversations.push({
             role: "assistant",
-            content: [
-              {
-                id: message.id,
-                input: message.input,
-                name: message.name,
-                type: "tool_use",
-              },
-            ],
+            content: currentTextContent,
           });
+        }
 
-          const tool_execution_result = await executeTool(
-            message.name,
-            message.input
-          );
-          conversations.push({
-            role: "user",
-            content: [
-              {
-                type: "tool_result",
-                tool_use_id: message.id,
-                content: tool_execution_result ?? "",
-              },
-            ],
-          });
-          processUserInput = false;
-          break;
+        // Handle tool calls from the final message
+        for (const content of message.content) {
+          if (content.type === "tool_use") {
+            // Log the tool call
+            console.log(
+              chalk.yellow(
+                `tool : ${content.name}(${JSON.stringify(content.input)})`
+              )
+            );
+
+            // Add the tool call to the conversations
+            conversations.push({
+              role: "assistant",
+              content: [
+                {
+                  id: content.id,
+                  input: content.input,
+                  name: content.name,
+                  type: "tool_use",
+                },
+              ],
+            });
+
+            // Execute the tool
+            const tool_execution_result = await executeTool(
+              content.name,
+              content.input
+            );
+
+            // Add the tool result to the conversations
+            conversations.push({
+              role: "user",
+              content: [
+                {
+                  type: "tool_result",
+                  tool_use_id: content.id,
+                  content: tool_execution_result ?? "",
+                },
+              ],
+            });
+            processUserInput = false;
+          }
         }
-        default: {
-          console.log("Unknown message type:", JSON.stringify(message));
-        }
-      }
-    }
+
+        resolve();
+      });
+
+      stream.on("error", (error) => {
+        console.error("Stream error:", error);
+        resolve();
+      });
+    });
   }
 
   console.log("Exiting...");
